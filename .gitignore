@@ -27,4 +27,14 @@ yarn-error.log
 /.idea
 /.nova
 /.zed
+
+# Docker (deploy to Railway, not Docker)
+Dockerfile
+docker-compose.yaml
+docker-compose.prod.yaml
+.dockerignore
+
+# Generated files
+graphify-out/
+app/graphify-out/
 docker.env
