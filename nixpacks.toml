@@ -1,10 +1,11 @@
 # nixpacks.toml - Nixpacks config for Laravel
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["php83", "nodejs_20"]
 
 [phases.install]
 cmds = [
+    "php -d allow_url_fopen=1 -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\" && php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php",
     "COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs",
     "npm ci"
 ]
@@ -13,7 +14,3 @@ cmds = [
 cmds = [
     "npm run build"
 ]
-
-[env]
-COMPOSER_ALLOW_SUPERUSER = "1"
-NODE_VERSION = "20"
