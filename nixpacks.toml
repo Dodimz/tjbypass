@@ -1,0 +1,19 @@
+# nixpacks.toml - Override Nixpacks build for Laravel
+
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.curl", "php83Extensions.dom", "php83Extensions.fileinfo", "php83Extensions.filter", "php83Extensions.gd", "php83Extensions.intl", "php83Extensions.mbstring", "php83Extensions.pdo_mysql", "php83Extensions.xml", "php83Extensions.zip", "php83Extensions.bcmath", "php83Extensions.exif", "php83Extensions.pcntl", "nodejs_20"]
+
+[phases.install]
+cmds = [
+    "composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs"
+]
+
+[phases.build]
+cmds = [
+    "npm ci",
+    "npm run build"
+]
+
+[env]
+COMPOSER_ALLOW_SUPERUSER = "1"
+COMPOSER_NO_INTERACTION = "1"
