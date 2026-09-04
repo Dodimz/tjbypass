@@ -1,6 +1,5 @@
 FROM php:8.3-cli AS builder
 
-# Install Node.js 20 + PHP extensions
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
         git unzip libpng-dev libjpeg-dev libfreetype6-dev libzip-dev \
@@ -38,8 +37,9 @@ COPY . .
 COPY --from=builder /var/www/html/public/build ./public/build
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts \
     && composer dump-autoload \
-    && php artisan storage:link \
-    && mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
