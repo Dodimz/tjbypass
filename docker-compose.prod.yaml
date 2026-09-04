@@ -1,0 +1,144 @@
+name: mentorlms
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/dockerfiles/php.dockerfile
+    env_file:
+      - ./.env.production
+    expose:
+      - '9000'
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/dockerfiles/php.dockerfile
+    command: ['php', 'artisan', 'queue:work', 'redis', '--sleep=3', '--tries=3', '--max-time=3600']
+    env_file:
+      - ./.env.production
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/dockerfiles/php.dockerfile
+    command: >
+      sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    env_file:
+      - ./.env.production
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/dockerfiles/nginx.dockerfile
+    ports:
+      - '80:80'
+    volumes:
+      - logs:/var/log/nginx
+    depends_on:
+      - php
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - ./docker/env/mysql.prod.env
+    command: --innodb-buffer-pool-size=256M --max-connections=200
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mentor-lms-network
+
+  # Optional: nightly mysqldump to the "backups" volume, keep 7 days.
+  # Start with: docker compose -f docker-compose.prod.yaml --profile backup up -d
+  backup:
+    image: mysql:8.0
+    env_file:
+      - ./docker/env/mysql.prod.env
+    volumes:
+      - backups:/backups
+    command: >
+      sh -c "
+        while true; do
+          mysqldump -h mysql -u root -p$$MYSQL_ROOT_PASSWORD --single-transaction --routines --triggers $$MYSQL_DATABASE > /backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+          find /backups -name '*.sql' -mtime +7 -delete
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    profiles:
+      - backup
+    networks:
+      - mentor-lms-network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  logs:
+    driver: local
+  app_storage:
+    driver: local
+  app_logs:
+    driver: local
+  backups:
+    driver: local
+
+networks:
+  mentor-lms-network:
+    driver: bridge
