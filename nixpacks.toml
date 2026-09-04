@@ -1,5 +1,8 @@
 # nixpacks.toml - Nixpacks config for Laravel
 
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
 [phases.install]
 cmds = [
     "COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs",
@@ -13,3 +16,4 @@ cmds = [
 
 [env]
 COMPOSER_ALLOW_SUPERUSER = "1"
+NODE_VERSION = "20"
