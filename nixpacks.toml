@@ -1,7 +1,15 @@
 # nixpacks.toml - Nixpacks config for Laravel
 
 [phases.install]
-cmds = ["COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs"]
+cmds = [
+    "COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs",
+    "npm ci"
+]
+
+[phases.build]
+cmds = [
+    "npm run build"
+]
 
 [env]
 COMPOSER_ALLOW_SUPERUSER = "1"
