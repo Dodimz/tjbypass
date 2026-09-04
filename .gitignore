@@ -31,7 +31,6 @@ yarn-error.log
 # Docker ( Railway deployment)
 docker-compose.yaml
 docker-compose.prod.yaml
-.dockerignore
 
 # Generated files
 graphify-out/
