@@ -28,8 +28,7 @@ yarn-error.log
 /.nova
 /.zed
 
-# Docker (deploy to Railway, not Docker)
-Dockerfile
+# Docker ( Railway deployment)
 docker-compose.yaml
 docker-compose.prod.yaml
 .dockerignore
