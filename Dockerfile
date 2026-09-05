@@ -1,45 +1,28 @@
 FROM php:8.3-cli AS builder
-
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-        git unzip libpng-dev libjpeg-dev libfreetype6-dev libzip-dev \
-        libicu-dev libonig-dev libxml2-dev libpq-dev \
+    && apt-get install -y nodejs git unzip libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libicu-dev libonig-dev libxml2-dev libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) bcmath exif gd intl mbstring pdo_mysql zip \
     && pecl install redis && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
-
 WORKDIR /var/www/html
-COPY composer.json composer.lock package.json package-lock.json ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts \
-    && npm ci
+# PENTING: COPY DULU BARU INSTALL
 COPY . .
-RUN npm run build
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
+RUN npm ci && npm run build
 
 FROM php:8.3-cli
-
-RUN apt-get update && apt-get install -y \
-        libpng-dev libjpeg-dev libfreetype6-dev libzip-dev \
-        libicu-dev libonig-dev libxml2-dev libpq-dev \
+RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libicu-dev libonig-dev libxml2-dev libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) bcmath exif gd intl mbstring pdo_mysql zip \
     && pecl install redis && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
-
 WORKDIR /var/www/html
-COPY . .
-COPY --from=builder /var/www/html/public/build ./public/build
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts \
-    && composer dump-autoload \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
+COPY --from=builder /var/www/html ./
+RUN composer dump-autoload --optimize
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"]

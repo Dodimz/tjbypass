@@ -49,10 +49,7 @@
         "files": [
             "app/Helpers/App.php",
             "app/Helpers/Plugin.php",
-            "app/Helpers/Utils.php",
-            "database/data/PageData.php",
-            "database/data/utils/IntroSections.php",
-            "database/data/utils/InnerSections.php"
+            "app/Helpers/Utils.php"
         ]
     },
     "autoload-dev": {
