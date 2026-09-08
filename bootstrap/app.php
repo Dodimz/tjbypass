@@ -32,7 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn() => route('login.index'));
 
         // Trust proxies - must run early to detect HTTPS correctly
-        $middleware->trustProxies(at: 0);
+        //$middleware->trustProxies(at: 0);
+        $middleware->trustProxies(at: '*');
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

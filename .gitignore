@@ -35,3 +35,4 @@ docker-compose.prod.yaml
 graphify-out/
 app/graphify-out/
 docker.env
+.env
