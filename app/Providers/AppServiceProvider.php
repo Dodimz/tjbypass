@@ -49,6 +49,18 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Fix redirect loop: switch session ke file jika DB belum connect
+        // Ini harus jalan SEBELUM StartSession middleware
+        if (! $this->app->runningInConsole()) {
+            try {
+                if (function_exists('isDBConnected') && ! isDBConnected()) {
+                    config(['session.driver' => 'file']);
+                }
+            } catch (\Throwable $e) {
+                config(['session.driver' => 'file']);
+            }
+        }
     }
 
     /**
