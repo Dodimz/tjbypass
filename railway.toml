@@ -2,6 +2,6 @@
 builder = "dockerfile"
 
 [deploy]
-startCommand = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+startCommand = "chmod -R 775 storage bootstrap/cache && php artisan config:clear && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=$PORT"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
