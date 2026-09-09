@@ -18,10 +18,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton('system', function (): ?Setting {
+        $this->app->singleton('system', function () {
             try {
-                if (isDBConnected() && Schema::hasTable('settings')) {
-                    return Setting::where('type', 'system')->first();
+                // Saat build di Railway, jangan sentuh DB sama sekali
+                if (app()->runningInConsole() && env('SKIP_DB_CHECK', false)) {
+                    return null;
+                }
+
+                if (function_exists('isDBConnected') && isDBConnected()) {
+                    if (Schema::hasTable('settings')) {
+                        return Setting::where('type', 'system')->first();
+                    }
                 }
 
                 return null;
@@ -36,10 +43,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //$this->configureDefaults();
-        //if (config('app.env') === 'production') {
-        //URL::forceScheme('https');
-    }
+        $this->configureDefaults();
+
+        // Force HTTPS hanya di production, aman karena trustProxies sudah di bootstrap/app.php
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 
     /**
@@ -48,51 +57,15 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
-
-        // DB::prohibitDestructiveCommands(
-        //     app()->isProduction(),
-        // );
-
-        // Password::defaults(
-        //     fn(): ?Password => app()->isProduction()
-        //         ? Password::min(12)
-        //         ->mixedCase()
-        //         ->letters()
-        //         ->numbers()
-        //         ->symbols()
-        //         ->uncompromised()
-        //         : null,
-        // );
-
         Schema::defaultStringLength(191);
 
-        // Fix for shared hosting missing CURL_SSLVERSION_TLSv1_2 constant
+        // Fix untuk shared hosting yang tidak ada constant TLSv1.2
         if (!defined('CURL_SSLVERSION_TLSv1_2')) {
-            define('CURL_SSLVERSION_TLSv1_2', 6); // 6 = TLSv1.2
+            define('CURL_SSLVERSION_TLSv1_2', 6);
         }
 
         ResetPassword::createUrlUsing(function (User $user, string $token) {
-            return env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $user->email;
+            return env('FRONTEND_URL', config('app.url')) . '/reset-password?token=' . $token . '&email=' . $user->email;
         });
-
-        // Force HTTPS scheme for URLs when accessed via HTTPS
-        // This ensures assets load with the correct protocol
-        // Note: Proxy trust is now handled by App\Http\Middleware\TrustProxies
-        if (request()->header('X-Forwarded-Proto') === 'https' || request()->secure()) {
-            URL::forceScheme('https');
-        }
-
-        // // Trust proxies when running behind a reverse proxy (e.g., Docker, nginx)
-        // // This allows Laravel to correctly detect HTTPS when behind a proxy
-        // if (config('app.env') !== 'local' || request()->hasHeader('X-Forwarded-Proto')) {
-        //     request()->setTrustedProxies(
-        //         ['*'],
-        //         \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
-        //             \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
-        //             \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
-        //             \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
-        //             \Illuminate\Http\Request::HEADER_X_FORWARDED_PREFIX
-        //     );
-        // }
     }
 }
