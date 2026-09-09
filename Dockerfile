@@ -55,4 +55,4 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 EXPOSE 8000
 
 #CMD ["sh", "-c", "chmod -R 775 storage bootstrap/cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080} --no-reload"]
-CMD ["sh", "-c", "echo 'Use railway.toml startCommand instead'"]
+CMD ["sh", "-c", "chmod -R 775 storage bootstrap/cache && php artisan config:clear && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=${PORT:-8080} --no-reload"]
